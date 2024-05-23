@@ -1,9 +1,12 @@
 {
     "url": "https://www.amazon.com/s?k=laptop&ref=nb_sb_noss",
-    "count": 10,
+    "count": 15,
     "secondsPerProduct": 5,
-    "outputFile": "output.json",
-    "AccumulateAndWriteOnce": false,
+    "outputFile": "test.json",
+    "accumulateAndWriteOnce": false,
+    "mustHaveFeatures": false,
+    "mustHaveReviews": false,
+    "threads": 3,
     "userAgents": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",

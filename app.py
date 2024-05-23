@@ -145,6 +145,18 @@ product_must_have_reviews_entry = tk.Checkbutton(
 product_must_have_reviews_label.grid(row=0, column=0, padx=5, sticky="w")
 product_must_have_reviews_entry.grid(row=0, column=1, padx=5)
 ############
+threads_group = tk.Frame()
+threads_label = tk.Label(
+    threads_group,
+    text="How many threads",
+    foreground="#022B3A",
+    font=("Roboto", 14, "bold"),
+)
+threads_entry = tk.Entry(threads_group, width=20, font=("Roboto", 12, tkFont.NORMAL))
+threads_entry.insert(0, "2")
+threads_label.grid(row=0, column=0, padx=5, sticky="w")
+threads_entry.grid(row=0, column=1, padx=5)
+############
 buttons_group = tk.Frame(root)
 buttons_group.grid(row=4, column=1, sticky="e")
 error_widgets = []
@@ -158,6 +170,7 @@ submit_button = tk.Button(
         products_count_entry,
         seconds_per_product_entry,
         output_file_entry,
+        threads_entry,
         checkbox_var,
         product_must_have_features_checkbox_var,
         product_must_have_reviews_checkbox_var,
@@ -176,6 +189,7 @@ output_file_group.grid(pady=5, row=4, column=1, sticky="w")
 accumulate_and_write_once_group.grid(pady=5, row=5, column=1, sticky="w")
 product_must_have_features_group.grid(pady=5, row=6, column=1, sticky="w")
 product_must_have_reviews_group.grid(pady=5, row=7, column=1, sticky="w")
+threads_group.grid(pady=5, row=8, column=1, sticky="w")
 
 buttons_group.grid(row=8, column=1, padx=5, pady=5)
 

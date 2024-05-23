@@ -18,6 +18,7 @@ def submit_data(
     products_count_entry,
     seconds_per_product_entry,
     output_file_entry,
+    threads_entry,
     checkbox_var,
     product_must_have_features_checkbox_var,
     product_must_have_reviews_checkbox_var,
@@ -31,15 +32,21 @@ def submit_data(
             errors["amazon_link"] = "Amazon link is required"
         elif amazon_link.find("amazon.com") == -1:
             errors["amazon_link"] = "Amazon link is invalid"
-
+        threads = threads_entry.get()
+        if not threads:
+            errors["threads"] = "Threads is required"
+        elif not threads.isdigit():
+            errors["threads"] = "Threads must be a number"
+        elif os.cpu_count() <= int(threads) + 1:
+            errors["threads"] = (
+                f"Your system has {os.cpu_count()} threads, you can't use more than {os.cpu_count()-1} threads"
+            )
         count = products_count_entry.get()
         if not count:
             errors["count"] = "Count is required"
         elif not count.isdigit():
             errors["count"] = "Count must be a number"
         delay = seconds_per_product_entry.get()
-        print(delay)
-        print(is_numeric(delay))
         if not delay:
             errors["delay"] = "Delay is required"
         elif is_numeric(delay) == False:
@@ -47,6 +54,11 @@ def submit_data(
         output_file = output_file_entry.get()
         if not output_file:
             errors["output_file"] = "Output file is required"
+
+        if int(threads) > 1 and checkbox_var.get() == True:
+            errors["accumulateAndWriteOnce"] = (
+                "You can't use accumulate and write once with more than 1 thread"
+            )
 
         for widget in error_widgets:
             widget.destroy()
@@ -61,7 +73,7 @@ def submit_data(
                     foreground="red",
                 )
             )
-            error_widgets[-1].grid(row=9, column=1, padx=5, pady=5)
+            error_widgets[-1].grid(row=10, column=1, padx=5, pady=5)
             for i, (key, value) in enumerate(errors.items()):
                 error_widgets.append(
                     tk.Label(
@@ -71,7 +83,7 @@ def submit_data(
                         foreground="red",
                     )
                 )
-                error_widgets[-1].grid(row=10 + i, column=1, padx=5, pady=5)
+                error_widgets[-1].grid(row=11 + i, column=1, padx=5, pady=5)
             return
         accumulate_and_write_once = checkbox_var.get()
         scrapingData = {
@@ -81,7 +93,10 @@ def submit_data(
             "outputFile": (
                 output_file if output_file.endswith(".json") else output_file + ".json"
             ),
-            "AccumulateAndWriteOnce": accumulate_and_write_once,
+            "accumulateAndWriteOnce": accumulate_and_write_once,
+            "mustHaveFeatures": product_must_have_features_checkbox_var.get(),
+            "mustHaveReviews": product_must_have_reviews_checkbox_var.get(),
+            "threads": int(threads),
             "userAgents": [
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
@@ -103,15 +118,13 @@ def submit_data(
             text="Scraping data, result would be saved in data folder",
             foreground="#083D77",
         )
-        output_text_widget.grid(row=9, column=1, padx=5, pady=5)
+        output_text_widget.grid(row=11, column=1, padx=5, pady=5)
 
         root.update_idletasks()
         subprocess.run(
             [
                 "python",
                 "index.py",
-                "--features" if product_must_have_features_checkbox_var.get() else "",
-                "--reviews" if product_must_have_reviews_checkbox_var.get() else "",
             ]
         )
         output_text_widget.destroy()
@@ -122,6 +135,6 @@ def submit_data(
             text="Scraping done, result saved in data folder",
             foreground="green",
         )
-        done_widget.grid(row=9, column=1, padx=5, pady=5)
+        done_widget.grid(row=11, column=1, padx=5, pady=5)
 
     return submit
