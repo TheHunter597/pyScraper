@@ -5,7 +5,8 @@ import json
 import os
 from utils.reviews_retriever import extract_reviews
 from utils.product_retriever import extract_features, extract_meta, get_links
-import concurrent.futures
+from utils.http_configs.proxy_servers import get_proxies
+from utils.do_request import do_request
 
 scrapingData = {}
 
@@ -14,52 +15,19 @@ with open(f"{os.path.dirname(os.path.realpath(__file__))}/scrapingData.json") as
 
 outputFileName = scrapingData["outputFile"]
 
-if scrapingData["accumulateAndWriteOnce"] == True and scrapingData["threads"] > 1:
-    print(
-        "Currently you cant use AccumulateAndWriteOnce and more than 1 thread at the same time"
-    )
-    exit()
 
-links = [
-    scrapingData["url"],
-]
+links = []
 
 user_agents = scrapingData["userAgents"]
-current_user_agent = 0
-
-headers = {
-    "Accept": "*/*",
-    "Connection": "keep-alive",
-    "Content-Type": "application/json",
-    "User-Agent": user_agents[current_user_agent],
-}
+proxy_servers = get_proxies(scrapingData["threads"])
 
 
-def do_request(url, index):
-    headers["User-Agent"] = user_agents[index % scrapingData["threads"]]
-    try:
-        global current_user_agent
-        response = requests.get(url, headers=headers)
-        while response.status_code != 200:
-            current_header = user_agents[current_user_agent]
-            headers["User-Agent"] = current_header
-            print(f"Changing user agent to {current_header}")
-            current_user_agent += 1
-            response = requests.get(url, headers=headers)
-        print(response.status_code)
-        print(f"Scraping {url}")
-
-        return BeautifulSoup(response.text, "lxml")
-    except Exception as e:
-        print(e)
-
-
-def get_next_page(data):
-    pagination = data.find("span", class_="s-pagination-strip")
-    nextPage = pagination.findChild("a", class_="s-pagination-next")
-    nextPage = nextPage.get("href")
-    url = "https://www.amazon.com" + nextPage
-    return url
+# def get_next_page(data):
+#     pagination = data.find("span", class_="s-pagination-strip")
+#     nextPage = pagination.findChild("a", class_="s-pagination-next")
+#     nextPage = nextPage.get("href")
+#     url = "https://www.amazon.com" + nextPage
+#     return url
 
 
 #######
@@ -74,12 +42,20 @@ os.makedirs(f"{os.path.dirname(os.path.realpath(__file__))}/data", exist_ok=True
 def main(index):
     global count
     global productsData
-    print(count)
+    global proxy_servers
+    global user_agents
+    headers = {
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "User-Agent": user_agents[index],
+    }
+    proxy = proxy_servers[index]
+
     if count >= scrapingData["count"]:
         return
     url = links[index]
-    data = do_request(url, index)
-    links.append(get_next_page(data))
+    data = do_request(url, index, headers, proxy, user_agents, scrapingData)
 
     products = data.find_all(
         "div",
@@ -98,12 +74,21 @@ def main(index):
         try:
             if count >= scrapingData["count"]:
                 break
-            response = requests.get(link, headers=headers)
+            response = requests.get(
+                link,
+                headers=headers,
+                proxies={
+                    "http": "http://" + proxy,
+                },
+            )
             data = BeautifulSoup(response.text, "lxml")
-
             featuresData = extract_features(data)
             reviewsData = extract_reviews(data)
-            meta = extract_meta(data)
+            meta = {}
+            try:
+                meta = extract_meta(data)
+            except:
+                print(link)
             current_product_data = {
                 "title": meta["title"],
                 "price": meta["price"],
@@ -126,21 +111,21 @@ def main(index):
                     )
 
                     continue
-            productsData.append(current_product_data)
-            if scrapingData["accumulateAndWriteOnce"] == False:
-                with open(
-                    output_file_dir,
-                    "w",
-                ) as file:
-                    file.write(json.dumps(productsData, indent=4))
-                    file.close()
+            if count < scrapingData["count"]:
+                productsData.append(current_product_data)
+                count += 1
+                print(f"Total products scraped: {count} / {scrapingData['count']}")
+                print("--------------------------")
 
-            count += 1
+                if scrapingData["accumulateAndWriteOnce"] == False:
+                    with open(
+                        output_file_dir,
+                        "w",
+                    ) as file:
+                        file.write(json.dumps(productsData, indent=4))
+                        file.close()
 
-            print(f"Total products scraped: {count} / {scrapingData['count']}")
-            print("--------------------------")
-
-            time.sleep(scrapingData["secondsPerProduct"])
+                time.sleep(scrapingData["secondsPerProduct"])
 
         except Exception as e:
             print(e)
@@ -151,23 +136,9 @@ def main(index):
     main(index)
 
 
-with concurrent.futures.ThreadPoolExecutor(
-    max_workers=scrapingData["threads"]
-) as executor:
-    import re
+from utils.start_threads import start
 
-    original = scrapingData["url"]
-    for i in range(scrapingData["threads"] + 1):
-        if original.find("page=") != -1:
-            result = re.sub(r"page=\d+", f"page={i+1}", original)
-            links.append((result))
-        else:
-            with_pages = original.split("&")
-            with_pages.insert(2, f"page={i+1}")
-            links.append("&".join(with_pages))
-    links.pop(0)
-    result = [i for i in range(scrapingData["threads"])]
-    executor.map(main, result)
+start(scrapingData, main, links)
 
 if scrapingData["accumulateAndWriteOnce"] == True:
     outputFileName = scrapingData["outputFile"]
