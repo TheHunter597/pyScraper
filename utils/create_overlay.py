@@ -59,8 +59,6 @@ def create_overlay(root):
         Product must have reviews --> would make sure the products retreived must have reviews property (would make the search slower if multiple products dont have reviews)
         -----------------------------------------------------
         Threads --> how many threads to use for scraping (the more threads the faster the scraping would be)
-        -----------------------------------------------------
-        currently you cant use AccumulateAndWriteOnce and more than 1 
         """
 
         label = tk.Label(

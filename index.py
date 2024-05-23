@@ -72,10 +72,11 @@ os.makedirs(f"{os.path.dirname(os.path.realpath(__file__))}/data", exist_ok=True
 
 
 def main(index):
-    if count >= scrapingData["count"]:
-        return
     global count
     global productsData
+    print(count)
+    if count >= scrapingData["count"]:
+        return
     url = links[index]
     data = do_request(url, index)
     links.append(get_next_page(data))

@@ -55,10 +55,10 @@ def submit_data(
         if not output_file:
             errors["output_file"] = "Output file is required"
 
-        if int(threads) > 1 and checkbox_var.get() == True:
-            errors["accumulateAndWriteOnce"] = (
-                "You can't use accumulate and write once with more than 1 thread"
-            )
+        # if int(threads) > 1 and checkbox_var.get() == True:
+        #     errors["accumulateAndWriteOnce"] = (
+        #         "You can't use accumulate and write once with more than 1 thread"
+        #     )
 
         for widget in error_widgets:
             widget.destroy()
