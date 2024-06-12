@@ -1,9 +1,24 @@
-def get_links(products):
+import re
+
+
+def get_links(data):
     links = []
+    products = []
+
+    products = data.find_all(
+        "div",
+        class_=re.compile("s-result-item s-asin", re.I),
+    )
+
     for product in products:
-        link = product.find(
-            "h2", class_="a-size-mini a-spacing-none a-color-base s-line-clamp-2"
-        ).findChild("a")
+        try:
+            header = product.find(
+                "h2", class_=re.compile("a-size-mini a-spacing-none a-color-base", re.I)
+            )
+
+            link = header.find("a")
+        except Exception as e:
+            print(e)
 
         if link:
             href = link.get("href")
@@ -43,42 +58,60 @@ def extract_price(data):
 
 
 def extract_image(data):
-    image = ""
+    image = data.find("img", id="landingImage")
+
+    if image == None:
+        image = data.find("img", id="main-image")
+
+    return image["src"]
+
+
+def extract_description(data):
     try:
-        image = data.find("img", id="landingImage")["src"]
+        productDescription = ""
+        product_description_list = data.find_all(
+            "ul", class_=re.compile("a-unordered-list a-vertical", re.I)
+        )
+        if len(product_description_list) > 0:
+            for list in product_description_list:
+                current = list.find("li").find("span").text.strip()
+                productDescription += current + ", "
+        return productDescription
     except:
-        image = data.find("img", id="main-image")["src"]
-    finally:
-        if image == "":
-            print("product dosent have an image")
-    return image
+        return ""
 
 
 def extract_meta(data):
-    try:
-        title = data.find("span", id="productTitle").text.strip()
-    except Exception as e:
-        print(e)
-        print("no title found")
+
+    title = data.find("span", id="productTitle").text.strip()
     image = extract_image(data)
     price = extract_price(data)
-
-    try:
-        productDescriptionElements = data.find(
-            "ul", class_="a-unordered-list a-vertical a-spacing-mini"
-        )
-        if productDescriptionElements is not None:
-            productDescriptionElements = productDescriptionElements.findChildren(
-                "span", class_="a-list-item"
-            )
-    except:
-        productDescriptionElements = []
-    productDescription = ""
-    for element in productDescriptionElements:
-        productDescription += element.text + ", "
+    description = extract_description(data)
     return {
         "title": title,
         "price": price,
         "image": image,
-        "description": productDescription,
+        "description": description,
     }
+
+
+def extract_product_details(data):
+    try:
+        container = data.find("div", id="prodDetails")
+        container_tables = container.find_all("table")
+
+        details_data = {}
+
+        for table in container_tables:
+            rows = table.find_all("tr")
+            for row in rows:
+                try:
+                    key = row.find("th").text.strip()
+                    value = row.find("td").text.strip()
+                    details_data[key] = value
+                except:
+                    pass
+
+        return details_data
+    except:
+        return {}

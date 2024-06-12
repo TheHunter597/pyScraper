@@ -4,7 +4,12 @@ import time
 import json
 import os
 from utils.reviews_retriever import extract_reviews
-from utils.product_retriever import extract_features, extract_meta, get_links
+from utils.product_retriever import (
+    extract_features,
+    extract_meta,
+    get_links,
+    extract_product_details,
+)
 from utils.http_configs.proxy_servers import get_proxies
 from utils.do_request import do_request
 
@@ -15,20 +20,10 @@ with open(f"{os.path.dirname(os.path.realpath(__file__))}/scrapingData.json") as
 
 outputFileName = scrapingData["outputFile"]
 
-
 links = []
 
 user_agents = scrapingData["userAgents"]
 proxy_servers = get_proxies(scrapingData["threads"])
-
-
-# def get_next_page(data):
-#     pagination = data.find("span", class_="s-pagination-strip")
-#     nextPage = pagination.findChild("a", class_="s-pagination-next")
-#     nextPage = nextPage.get("href")
-#     url = "https://www.amazon.com" + nextPage
-#     return url
-
 
 #######
 productsData = []
@@ -50,23 +45,19 @@ def main(index):
         "Content-Type": "application/json",
         "User-Agent": user_agents[index],
     }
-    proxy = proxy_servers[index]
-
+    proxy = proxy_servers[index % scrapingData["threads"]]
     if count >= scrapingData["count"]:
         return
     url = links[index]
     data = do_request(url, index, headers, proxy, user_agents, scrapingData)
 
-    products = data.find_all(
-        "div",
-        class_="sg-col-20-of-24 s-result-item s-asin sg-col-0-of-12 sg-col-16-of-20 sg-col s-widget-spacing-small sg-col-12-of-16",
-    )
-    if len(products) == 0:
-        products = data.find_all(
-            "div",
-            class_="sg-col-4-of-24 sg-col-4-of-12 s-result-item s-asin sg-col-4-of-16 sg-col s-widget-spacing-small sg-col-4-of-20",
-        )
-    productsLinks = get_links(products)
+    productsLinks = []
+
+    try:
+        productsLinks = get_links(data)
+    except Exception as e:
+        print("Error in getting links")
+        print(e)
     print("--------------------------")
 
     for link in productsLinks:
@@ -89,6 +80,8 @@ def main(index):
                 meta = extract_meta(data)
             except:
                 print(link)
+
+            product_details = extract_product_details(data)
             current_product_data = {
                 "title": meta["title"],
                 "price": meta["price"],
@@ -96,6 +89,7 @@ def main(index):
                 "features": featuresData,
                 "description": meta["description"],
                 "reviews": reviewsData,
+                "product_details": product_details,
             }
             ## checks if --features command line argument is passed if yes then product must have features
             if scrapingData["mustHaveFeatures"] == True:
@@ -129,7 +123,6 @@ def main(index):
 
         except Exception as e:
             print(e)
-
             continue
 
     index += scrapingData["threads"]

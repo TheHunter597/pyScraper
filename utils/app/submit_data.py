@@ -84,7 +84,7 @@ def submit_data(
         accumulate_and_write_once = checkbox_var.get()
 
         with open(
-            f"{os.path.dirname(os.path.realpath(__file__))}/http_configs/user_agents.json"
+            f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/http_configs/user_agents.json"
         ) as file:
             user_agents = json.load(file)
 
@@ -101,7 +101,7 @@ def submit_data(
             "threads": int(threads),
             "userAgents": user_agents,
         }
-        output_file_dir = f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/scrapingData.json"
+        output_file_dir = f"{os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))}/scrapingData.json"
         with open(output_file_dir, "w") as file:
             file.write(json.dumps(scrapingData, indent=4))
         output_text_widget = tk.Label(
