@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import font as tkFont
-from utils.create_overlay import create_overlay
-from utils.submit_data import submit_data
+from utils.app.create_overlay import create_overlay
+from utils.app.submit_data import submit_data
 
 
 # Initialize main root
@@ -28,17 +28,24 @@ setup_grid()
 # Amazon link group
 amazon_link_group = tk.Frame(root)
 
+
 amazon_link_label = tk.Label(
     amazon_link_group,
     text="Amazon link",
     foreground="#022B3A",
     font=("Roboto", 14, "bold"),
 )
+
+
+def on_click(event):
+    event.widget.delete(0, tk.END)
+
+
 amazon_link_entry = tk.Entry(
     amazon_link_group, width=50, font=("Roboto", 12, tkFont.NORMAL)
 )
 amazon_link_entry.insert(0, "https://www.amazon.com/s?k=laptop&ref=nb_sb_noss")
-
+amazon_link_entry.bind("<Button-1>", on_click)
 amazon_link_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
 amazon_link_entry.grid(row=0, column=1, padx=5, pady=5)
 

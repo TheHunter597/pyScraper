@@ -2,6 +2,7 @@ import json
 import subprocess
 import tkinter as tk
 import os
+import json
 
 
 def is_numeric(s):
@@ -55,11 +56,6 @@ def submit_data(
         if not output_file:
             errors["output_file"] = "Output file is required"
 
-        # if int(threads) > 1 and checkbox_var.get() == True:
-        #     errors["accumulateAndWriteOnce"] = (
-        #         "You can't use accumulate and write once with more than 1 thread"
-        #     )
-
         for widget in error_widgets:
             widget.destroy()
         error_widgets.clear()
@@ -86,6 +82,12 @@ def submit_data(
                 error_widgets[-1].grid(row=11 + i, column=1, padx=5, pady=5)
             return
         accumulate_and_write_once = checkbox_var.get()
+
+        with open(
+            f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/http_configs/user_agents.json"
+        ) as file:
+            user_agents = json.load(file)
+
         scrapingData = {
             "url": amazon_link,
             "count": int(count),
@@ -97,19 +99,9 @@ def submit_data(
             "mustHaveFeatures": product_must_have_features_checkbox_var.get(),
             "mustHaveReviews": product_must_have_reviews_checkbox_var.get(),
             "threads": int(threads),
-            "userAgents": [
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:88.0) Gecko/20100101 Firefox/88.0",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36 Edg/90.0.818.66",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1 Safari/605.1.15",
-                "Mozilla/5.0 (iPhone; CPU iPhone OS 14_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1 Mobile/15E148 Safari/604.1",
-                "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Mobile Safari/537.36",
-                "Mozilla/5.0 (Android 10; Mobile; rv:88.0) Gecko/88.0 Firefox/88.0",
-            ],
+            "userAgents": user_agents,
         }
-        output_file_dir = f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/scrapingData.json"
+        output_file_dir = f"{os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))}/scrapingData.json"
         with open(output_file_dir, "w") as file:
             file.write(json.dumps(scrapingData, indent=4))
         output_text_widget = tk.Label(
@@ -135,6 +127,6 @@ def submit_data(
             text="Scraping done, result saved in data folder",
             foreground="green",
         )
-        done_widget.grid(row=11, column=1, padx=5, pady=5)
+        done_widget.grid(row=12, column=1, padx=5, pady=5)
 
     return submit
